@@ -1,0 +1,9 @@
+.error {
+  color: var(--color-error);
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 0.5rem;
+  width: 100%;
+  text-align: center;
+}
