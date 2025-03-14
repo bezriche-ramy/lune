@@ -1,13 +1,22 @@
 services:
   - type: web
-    name: youtube-video-downloader
-    runtime: static
-    buildCommand: npm run build
-    staticPublishPath: ./dist
+    name: lune-backend
+    env: python
+    buildCommand: cd backend && pip install -r requirements.txt
+    startCommand: cd backend && python app.py
     envVars:
-      - key: NODE_VERSION
-        value: 16
+      - key: PYTHON_VERSION
+        value: 3.9.0
+
+  - type: web
+    name: lune-frontend
+    env: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
     routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://lune-backend.onrender.com/api/*
       - type: rewrite
         source: /*
         destination: /index.html

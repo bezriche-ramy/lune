@@ -9,12 +9,22 @@ A web application that allows you to download videos from YouTube in both MP4 an
 - Download audio as MP3
 - Clean and intuitive user interface
 
+## Project Structure
+
+```
+lune/
+├── frontend/     # React frontend application
+├── backend/      # Python Flask backend
+├── package.json  # Root package.json for deployment
+└── render.yaml   # Render deployment configuration
+```
+
 ## Installation
 
 1. Clone the repository
 2. Install frontend dependencies:
    ```bash
-   cd lune
+   cd frontend
    npm install
    ```
 3. Install backend dependencies:
@@ -54,7 +64,7 @@ Download and install from https://www.ffmpeg.org/download.html
 
 2. In a separate terminal, start the frontend:
    ```bash
-   cd lune
+   cd frontend
    npm run dev
    ```
    The frontend will run on http://localhost:5173 (or another port if 5173 is in use)
@@ -82,21 +92,21 @@ This application is for personal use only. Downloading copyrighted material with
 ### Option 1: Using the Dashboard
 
 1. Create a Render account at https://render.com
-2. Click "New +" and select "Static Site"
-3. Connect your GitHub/GitLab repository or upload your files
-4. Configure the service:
-   - **Name**: youtube-video-downloader (or choose your own)
-   - **Build Command**: `npm run build`
-   - **Publish Directory**: `dist`
-5. Click "Create Static Site"
+2. Click "New +" and select "Blueprint"
+3. Connect your GitHub/GitLab repository
+4. Render will use the render.yaml file to configure your services
+5. Click "Apply" to deploy both frontend and backend
 
-### Option 2: Using render.yaml (Recommended)
+### Option 2: Manual Deployment
 
-1. Make sure you have the `render.yaml` file in your repository
-2. Go to Render Dashboard
-3. Click "New +" and select "Blueprint"
-4. Connect your repository
-5. Render will automatically detect and use the render.yaml file
-6. Confirm the deployment settings and click "Apply"
+For frontend:
+1. Create a new Static Site on Render
+2. Set the build command to: `cd frontend && npm install && npm run build`
+3. Set the publish directory to: `frontend/dist`
 
-Your app will be deployed and accessible at the provided Render URL.
+For backend:
+1. Create a new Web Service on Render
+2. Set the build command to: `cd backend && pip install -r requirements.txt`
+3. Set the start command to: `cd backend && python app.py`
+
+Your app will be deployed and accessible at the provided Render URLs.
