@@ -21,12 +21,18 @@ lune/
 
 ## Installation
 
-1. Clone the repository
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/bezriche-ramy/lune.git
+   cd lune
+   ```
+
 2. Install frontend dependencies:
    ```bash
    cd frontend
    npm install
    ```
+
 3. Install backend dependencies:
    ```bash
    cd backend
@@ -110,3 +116,35 @@ For backend:
 3. Set the start command to: `cd backend && python app.py`
 
 Your app will be deployed and accessible at the provided Render URLs.
+
+## Setup Instructions
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/bezriche-ramy/lune.git
+   cd lune
+   ```
+
+2. Install dependencies:
+   ```sh
+   npm install
+   ```
+
+3. Build the project:
+   ```sh
+   cd frontend
+   npm install
+   npm run build
+   mkdir -p ../backend/static
+   cp -r dist/* ../backend/static/
+   ```
+
+4. Run the backend server:
+   ```sh
+   cd ../backend
+   npm start
+   ```
+
+## Troubleshooting
+
+If you encounter any issues, please refer to the [Render troubleshooting guide](https://render.com/docs/troubleshooting-deploys).
