@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: youtube-video-downloader
+    runtime: static
+    buildCommand: npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: NODE_VERSION
+        value: 16
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
