@@ -4,9 +4,13 @@
   "description": "YouTube Video Downloader",
   "scripts": {
     "start": "cd backend && gunicorn app:app",
-    "build": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm install && npm run build && mkdir -p ../backend/static && cp -r dist/* ../backend/static/",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && python app.py",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "docker:build": "docker build -t lune .",
+    "docker:run": "docker run -p 8080:8080 lune",
+    "deploy": "npm run build && npm run start",
     "test": "echo \"No tests specified\" && exit 0"
   },
   "engines": {
@@ -33,6 +37,7 @@
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
-    "globals": "^15.15.0"
+    "globals": "^15.15.0",
+    "concurrently": "^8.2.0"
   }
 }
