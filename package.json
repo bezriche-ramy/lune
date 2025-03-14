@@ -1,14 +1,25 @@
 {
-  "name": "lune-youtube-downloader",
+  "name": "lune",
   "version": "1.0.0",
-  "description": "YouTube video downloader application",
+  "description": "YouTube Video Downloader",
   "scripts": {
+    "start": "cd backend && gunicorn app:app",
     "build": "cd frontend && npm install && npm run build",
-    "start": "cd frontend && npm start"
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && python app.py",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "engines": {
     "node": ">=16.0.0"
   },
+  "keywords": [
+    "youtube",
+    "downloader",
+    "mp3",
+    "mp4"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

@@ -21,100 +21,99 @@ def format_duration(seconds):
     else:
         return f"{minutes}:{seconds:02d}"
 
-@app.route('/api/info', methods=['GET'])
+def sanitize_filename(filename):
+    """Remove invalid characters from filename"""
+    return re.sub(r'[\\/*?:"<>|]', "", filename)
+
+@app.route('/video-info', methods=['GET'])
 def get_video_info():
+    url = request.args.get('url')
+    if not url:
+        return jsonify({'error': 'URL parameter is required'}), 400
+    
     try:
-        url = request.args.get('url')
-        if not url:
-            return jsonify({"error": "URL is required"}), 400
-        
-        url = unquote(url)
-        
         ydl_opts = {
             'quiet': True,
-            'no_warnings': True,
+            'no_warnings': True
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             
-            # Format video info similar to the Node.js backend
-            video_info = {
-                'videoId': info.get('id'),
+            # Format duration as mm:ss
+            duration_seconds = info.get('duration')
+            minutes, seconds = divmod(duration_seconds, 60)
+            hours, minutes = divmod(minutes, 60)
+            
+            if hours > 0:
+                duration_str = f"{hours}:{minutes:02d}:{seconds:02d}"
+            else:
+                duration_str = f"{minutes}:{seconds:02d}"
+            
+            return jsonify({
+                'id': info.get('id'),
                 'title': info.get('title'),
-                'channel': info.get('uploader'),
-                'duration': format_duration(info.get('duration', 0)),
-                'thumbnail': info.get('thumbnail')
-            }
-            
-            return jsonify(video_info)
-            
+                'uploader': info.get('uploader'),
+                'thumbnail': info.get('thumbnail'),
+                'duration': duration_str,
+                'description': info.get('description')
+            })
     except Exception as e:
-        print(f"Error fetching video info: {str(e)}")
-        return jsonify({"error": "Failed to fetch video info"}), 500
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/download', methods=['GET'])
+@app.route('/download', methods=['GET'])
 def download_video():
+    url = request.args.get('url')
+    format_type = request.args.get('format', 'mp4')
+    
+    if not url:
+        return jsonify({'error': 'URL parameter is required'}), 400
+    
     try:
-        video_id = request.args.get('videoId')
-        format_type = request.args.get('format')
-        
-        if not video_id:
-            return jsonify({"error": "Video ID is required"}), 400
-            
-        url = f"https://www.youtube.com/watch?v={video_id}"
+        with yt_dlp.YoutubeDL({}) as ydl:
+            info = ydl.extract_info(url, download=False)
+            title = sanitize_filename(info.get('title', 'video'))
         
         temp_dir = tempfile.mkdtemp()
         
-        try:
-            # Configure yt-dlp options based on format
-            if format_type == 'mp3':
-                ydl_opts = {
-                    'format': 'bestaudio/best',
-                    'outtmpl': f'{temp_dir}/%(title)s.%(ext)s',
-                    'postprocessors': [{
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': 'mp3',
-                        'preferredquality': '192',
-                    }],
-                }
-                file_extension = 'mp3'
-            else:  # mp4
-                ydl_opts = {
-                    'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                    'outtmpl': f'{temp_dir}/%(title)s.%(ext)s',
-                }
-                file_extension = 'mp4'
-                
-            # Download the file
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(url, download=True)
-                title = info.get('title', video_id)
-                # Clean filename
-                clean_title = re.sub(r'[^\w\s-]', '', title).strip()
-                
-            # Find the file in the temp dir
-            files = os.listdir(temp_dir)
-            if not files:
-                return jsonify({"error": "Download failed - no file created"}), 500
-                
-            file_path = os.path.join(temp_dir, files[0])
+        if format_type == 'mp3':
+            filename = f"{title}.mp3"
+            filepath = os.path.join(temp_dir, filename)
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+            }
+        else:  # mp4
+            filename = f"{title}.mp4"
+            filepath = os.path.join(temp_dir, filename)
+            ydl_opts = {
+                'format': 'best[ext=mp4]/bestvideo[ext=mp4]+bestaudio/best',
+                'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
+            }
+        
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
             
-            # Set up the response
+            # Find the downloaded file
+            for file in os.listdir(temp_dir):
+                if file.endswith('.mp3') if format_type == 'mp3' else file.endswith('.mp4'):
+                    filepath = os.path.join(temp_dir, file)
+                    break
+            
             return send_file(
-                file_path,
+                filepath,
                 as_attachment=True,
-                download_name=f"{clean_title}.{file_extension}",
-                mimetype=f"{'audio' if format_type == 'mp3' else 'video'}/{file_extension}"
+                download_name=filename,
+                mimetype='audio/mp3' if format_type == 'mp3' else 'video/mp4'
             )
-            
-        finally:
-            # Clean up temp directory when done
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            
     except Exception as e:
-        print(f"Error downloading video: {str(e)}")
-        return jsonify({"error": "Failed to download video"}), 500
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
